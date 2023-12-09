@@ -3,6 +3,7 @@ module github.com/cox96de/simplecni
 go 1.20
 
 require (
+	github.com/coreos/go-iptables v0.7.0
 	github.com/jackpal/gateway v1.0.10
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.38.1
@@ -18,7 +19,6 @@ require (
 )
 
 require (
-	github.com/coreos/go-iptables v0.7.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
