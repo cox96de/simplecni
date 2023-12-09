@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
-	"github.com/coreos/go-iptables/iptables"
 	"net"
 	"os"
 	"strings"
+
+	"github.com/coreos/go-iptables/iptables"
 
 	"github.com/jackpal/gateway"
 	"github.com/pkg/errors"
@@ -46,7 +47,7 @@ func main() {
 	checkError(err)
 	conflistContent, err := json.Marshal(conflistFile)
 	checkError(err)
-	err = os.WriteFile("/etc/cni/net.d/10-simplecni.conflist", conflistContent, 0644)
+	err = os.WriteFile("/etc/cni/net.d/10-simplecni.conflist", conflistContent, 0o644)
 	checkError(err)
 	defaultNIC, err := getDefaultNIC()
 	checkError(err)
@@ -68,6 +69,7 @@ func main() {
 		}
 	}
 }
+
 func flushIptables(nodePodCIDRs []*net.IPNet) error {
 	ipv4Tables, err := iptables.NewWithProtocol(iptables.ProtocolIPv4)
 	if err != nil {
@@ -119,7 +121,8 @@ func flushIptables(nodePodCIDRs []*net.IPNet) error {
 }
 
 func flushRoutes(ctx context.Context, selfNode string, kubeClient kubernetes.Interface, nic *net.Interface,
-	clusterPodCIDRs []*net.IPNet) error {
+	clusterPodCIDRs []*net.IPNet,
+) error {
 	nodeList, err := kubeClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return errors.WithMessagef(err, "failed to list node list")
@@ -140,7 +143,7 @@ func flushRoutes(ctx context.Context, selfNode string, kubeClient kubernetes.Int
 	if err != nil {
 		return errors.WithMessagef(err, "failed to list route list")
 	}
-	// Filter routes that are in cluster pod cidrs.
+	// Filter routes that are in cluster pod CIDRs.
 	// The route might be created by other CNI plugins or previous execution.
 	// If it is not affect route, it's better to delete.
 	// If it is affect route, keep it.
@@ -167,9 +170,7 @@ func flushRoutes(ctx context.Context, selfNode string, kubeClient kubernetes.Int
 				log.Errorf("failed to parse pod cidr [%s]: %+v", podCIDR, err)
 				continue
 			}
-			var (
-				nodeIP net.IP
-			)
+			var nodeIP net.IP
 			switch {
 			case isIPv4(peerNodeCIDR.IP):
 				if ipv4 == nil {
