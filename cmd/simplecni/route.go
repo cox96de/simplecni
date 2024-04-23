@@ -134,3 +134,25 @@ func filterClusterRouter(rs []netlink.Route, clusterPodCIDRs []*net.IPNet) map[s
 	}
 	return routes
 }
+
+func cleanRoutes(nic *net.Interface, clusterPodCIDRs []*net.IPNet) error {
+	link, err := netlink.LinkByName(nic.Name)
+	if err != nil {
+		return errors.WithMessagef(err, "failed to get link by name [%s]", nic.Name)
+	}
+	rs, err := netlink.RouteList(link, netlink.FAMILY_ALL)
+	if err != nil {
+		return errors.WithMessagef(err, "failed to list route list")
+	}
+	// Filter routes that are in cluster pod CIDRs.
+	clusterRouter := filterClusterRouter(rs, clusterPodCIDRs)
+	// Remote all unknown routes.
+	for _, route := range clusterRouter {
+		log.Infof("delete route %+v", route)
+		if err := netlink.RouteDel(&route); err != nil {
+			log.Errorf("failed to delete route [%+v]: %+v", route, err)
+			continue
+		}
+	}
+	return nil
+}
