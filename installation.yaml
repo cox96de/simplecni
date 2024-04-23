@@ -63,7 +63,6 @@ spec:
         - name: shiba
           image: cox96de/simplecni:latest
           imagePullPolicy: Always
-
           env:
             - name: NODENAME
               valueFrom:
