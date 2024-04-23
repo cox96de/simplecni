@@ -6,7 +6,9 @@ import (
 	"flag"
 	"net"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/jackpal/gateway"
 	"github.com/pkg/errors"
@@ -62,8 +64,11 @@ func main() {
 			}
 		}
 	}()
+	stopSignal := make(chan os.Signal, 1)
+	signal.Notify(stopSignal, os.Interrupt, syscall.SIGTERM)
 	// Init routes.
 	fireCh <- struct{}{}
+main:
 	for {
 		watcher, err := kubeClient.CoreV1().Nodes().Watch(context.Background(), metav1.ListOptions{})
 		checkError(err)
@@ -77,8 +82,17 @@ func main() {
 				}
 				log.Infof("got event: %s", e.Type)
 				fireCh <- struct{}{}
+			case sig := <-stopSignal:
+				log.Infof("signal %s received", sig)
+				break main
 			}
 		}
+	}
+	if err = cleanIptables(); err != nil {
+		log.Errorf("failed to clean iptables: %+v", err)
+	}
+	if err = cleanRoutes(defaultNIC, clusterPodCIDRs); err != nil {
+		log.Errorf("failed to clean routes: %+v", err)
 	}
 }
 
