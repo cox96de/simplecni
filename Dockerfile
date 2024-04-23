@@ -1,6 +1,7 @@
 FROM golang:1.20 as builder
 ADD . /src
 WORKDIR /src
+RUN go env -w GOPROXY=https://goproxy.cn,direct
 RUN go build -o simplecni ./cmd/simplecni
 FROM debian
 COPY --from=builder /src/simplecni /
